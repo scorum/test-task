@@ -12,6 +12,7 @@ RUN apk update && apk add ca-certificates
 WORKDIR /app
 
 COPY --from=builder /app/bin/api /app/api
+COPY --from=builder /app/configs/config.yml /app/configs/config.yml
 
 EXPOSE 8080
 
