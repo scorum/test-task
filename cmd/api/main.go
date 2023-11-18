@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jinzhu/configor"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/scorum/account-svc/internal/config"
+	"github.com/scorum/account-svc/internal/db"
+	"github.com/scorum/account-svc/internal/handler"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,17 +28,23 @@ type Config struct {
 }
 
 func main() {
-	var (
-		cfg    Config
-		router = chi.NewRouter()
-	)
-
+	var cfg Config
 	if err := configor.Load(&cfg, "configs/config.yml"); err != nil {
 		logrus.WithError(err).Error("load config")
 		return
 	}
 
-	server := setupServer(cfg.Server, router)
+	conn, err := setupDBConnection(cfg.DB)
+	if err != nil {
+		logrus.WithError(err).Error("setup db connection")
+		return
+	}
+
+	var (
+		storage    = db.NewStorage(conn)
+		apiHandler = handler.New(storage)
+		server     = setupServer(cfg.Server, setupRouter(apiHandler))
+	)
 
 	go func() {
 		logrus.Info("starting server")
@@ -54,6 +65,15 @@ func main() {
 	logrus.Info("done")
 }
 
+func setupRouter(h *handler.Handler) chi.Router {
+	router := chi.NewRouter()
+	router.Post("/v1/account/create", h.Create)
+	router.Post("/v1/account/debit", h.Debit)
+	router.Post("/v1/account/credit", h.Credit)
+	router.Post("/v1/account/getBalance", h.GetBalance)
+	return router
+}
+
 func setupServer(cfg config.ServerConfig, handler http.Handler) http.Server {
 	return http.Server{
 		Addr:         cfg.Addr,
@@ -71,4 +91,25 @@ func shutdownServer(server *http.Server) {
 	if err := server.Shutdown(ctx); err != nil {
 		logrus.WithError(err).Error("server shutdown")
 	}
+}
+
+func setupDBConnection(cfg config.DBConfig) (*sqlx.DB, error) {
+	if cfg.Addr == "" {
+		return nil, nil
+	}
+
+	conn, err := sqlx.Open("postgres", cfg.Addr)
+	if err != nil {
+		return nil, fmt.Errorf("open db: %w", err)
+	}
+
+	conn.SetMaxOpenConns(cfg.MaxOpenConns)
+	conn.SetMaxIdleConns(cfg.MaxIdleConns)
+
+	if err := conn.Ping(); err != nil {
+		_ = conn.Close()
+		return nil, fmt.Errorf("ping db: %w", err)
+	}
+
+	return conn, nil
 }

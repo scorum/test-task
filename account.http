@@ -1,0 +1,38 @@
+POST http://localhost:8080/v1/account/create
+Content-Type: application/json
+
+{
+  "account_id": "account1",
+  "brand_id":"brand1",
+  "balance": 11,
+  "currency":"EUR"
+}
+
+###
+POST http://localhost:8080/v1/account/getBalance
+Content-Type: application/json
+
+{
+  "account_id": "account1",
+  "brand_id":"brand1"
+}
+
+###
+POST http://localhost:8080/v1/account/credit
+Content-Type: application/json
+
+{
+  "account_id": "account1",
+  "brand_id":"brand1",
+  "amount": 1.33
+}
+
+###
+POST http://localhost:8080/v1/account/debit
+Content-Type: application/json
+
+{
+  "account_id": "account1",
+  "brand_id":"brand1",
+  "amount": 0.1
+}

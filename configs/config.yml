@@ -3,6 +3,6 @@ server:
   http_read_timeout: 30s
   http_write_timeout: 30s
 db:
-  addr: host=127.0.0.1 port=6433 user=account-svc password=account-svc dbname=account-svc sslmode=disable
+  addr: host=127.0.0.1 port=6432 user=account_svc password=account_svc dbname=account_svc sslmode=disable
   max_idle_conns: 10
   max_open_conns: 10
