@@ -13,6 +13,7 @@ WORKDIR /app
 
 COPY --from=builder /app/bin/api /app/api
 COPY --from=builder /app/configs/config.yml /app/configs/config.yml
+COPY --from=builder /app/migrations /app/migrations
 
 EXPOSE 8080
 

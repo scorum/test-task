@@ -1,3 +1,4 @@
+-- +migrate Up
 CREATE TABLE account (
     id BIGINT GENERATED ALWAYS AS IDENTITY,
     account_id TEXT,
@@ -8,3 +9,5 @@ CREATE TABLE account (
     PRIMARY KEY (id),
     UNIQUE (account_id, brand_id)
 );
+
+-- +migrate Down

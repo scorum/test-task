@@ -15,6 +15,7 @@ import (
 	"github.com/jinzhu/configor"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	migrate "github.com/rubenv/sql-migrate"
 	"github.com/scorum/account-svc/internal/config"
 	"github.com/scorum/account-svc/internal/db"
 	"github.com/scorum/account-svc/internal/handler"
@@ -37,6 +38,11 @@ func main() {
 	conn, err := setupDBConnection(cfg.DB)
 	if err != nil {
 		logrus.WithError(err).Error("setup db connection")
+		return
+	}
+
+	if err := migrateDB(conn); err != nil {
+		logrus.WithError(err).Error("schema migrate")
 		return
 	}
 
@@ -112,4 +118,18 @@ func setupDBConnection(cfg config.DBConfig) (*sqlx.DB, error) {
 	}
 
 	return conn, nil
+}
+
+func migrateDB(db *sqlx.DB) error {
+	migrations := &migrate.FileMigrationSource{
+		Dir: "migrations",
+	}
+
+	n, err := migrate.Exec(db.DB, "postgres", migrations, migrate.Up)
+	if err != nil {
+		return fmt.Errorf("sql-migrate: %w", err)
+	}
+
+	logrus.Infof("Applied %d migrations!\n", n)
+	return nil
 }
