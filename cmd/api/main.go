@@ -30,21 +30,25 @@ type Config struct {
 }
 
 func main() {
+	if err := run(); err != nil {
+		logrus.WithError(err).Error("application failed")
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	var cfg Config
 	if err := configor.Load(&cfg, "configs/config.yml"); err != nil {
-		logrus.WithError(err).Error("load config")
-		return
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	conn, err := setupDBConnection(cfg.DB)
 	if err != nil {
-		logrus.WithError(err).Error("setup db connection")
-		return
+		return fmt.Errorf("setup db connection: %w", err)
 	}
 
 	if err := migrateDB(conn); err != nil {
-		logrus.WithError(err).Error("schema migrate")
-		return
+		return fmt.Errorf("schema migrate: %w", err)
 	}
 
 	var (
@@ -70,6 +74,7 @@ func main() {
 	shutdownServer(&server)
 
 	logrus.Info("done")
+	return nil
 }
 
 func setupRouter(h *handler.Handler) chi.Router {
