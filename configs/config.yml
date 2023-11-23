@@ -6,3 +6,4 @@ db:
   addr: host=127.0.0.1 port=6432 user=account_svc password=account_svc dbname=account_svc sslmode=disable
   max_idle_conns: 10
   max_open_conns: 10
+debit_limit: 10

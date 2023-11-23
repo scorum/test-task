@@ -25,14 +25,16 @@ type Storage interface {
 }
 
 type Handler struct {
-	storage Storage
-	log     *logrus.Entry
+	storage    Storage
+	log        *logrus.Entry
+	debitLimit float64
 }
 
-func New(storage Storage) *Handler {
+func New(storage Storage, debitLimit float64) *Handler {
 	return &Handler{
-		storage: storage,
-		log:     logrus.WithField("handler", "api"),
+		storage:    storage,
+		log:        logrus.WithField("handler", "api"),
+		debitLimit: debitLimit,
 	}
 }
 
@@ -106,6 +108,15 @@ func (h Handler) Debit(w http.ResponseWriter, r *http.Request) {
 
 	if err := req.Validate(); err != nil {
 		warnInvalidRequest(w, http.StatusBadRequest, err.Error(), h.log.WithError(err))
+		return
+	}
+
+	if req.Amount > h.debitLimit {
+		warnInvalidRequest(w, http.StatusBadRequest, "debit limit exceeded",
+			h.log.WithFields(logrus.Fields{
+				"debit_limit": h.debitLimit,
+				"amount":      req.Amount,
+			}))
 		return
 	}
 

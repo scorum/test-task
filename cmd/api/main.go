@@ -23,9 +23,10 @@ import (
 )
 
 type Config struct {
-	Server   config.ServerConfig `yaml:"server" required:"true"`
-	DB       config.DBConfig     `yaml:"db" required:"true"`
-	LogLevel string              `yaml:"log_level" default:"info"`
+	Server     config.ServerConfig `yaml:"server" required:"true"`
+	DB         config.DBConfig     `yaml:"db" required:"true"`
+	LogLevel   string              `yaml:"log_level" default:"info"`
+	DebitLimit float64             `yaml:"debit_limit" required:"true"`
 }
 
 func main() {
@@ -48,7 +49,7 @@ func main() {
 
 	var (
 		storage    = db.NewStorage(conn)
-		apiHandler = handler.New(storage)
+		apiHandler = handler.New(storage, cfg.DebitLimit)
 		server     = setupServer(cfg.Server, setupRouter(apiHandler))
 	)
 
